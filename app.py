@@ -47,7 +47,7 @@ def articles():
 
     else:
         msg = 'No articles found'
-        return render_template('articles.html')
+        return render_template('articles.html',msg=msg)
 
         
     cur.close()
@@ -153,7 +153,7 @@ def dashboard():
 
     else:
         msg = 'No articles found'
-        return render_template('dashboard.html')
+        return render_template('dashboard.html',msg=msg)
 
 
     cur.close()
@@ -204,7 +204,7 @@ def edit_article(id):
 
         cur = mysql.connection.cursor()
 
-        cur.execute("Update articles set name=%s, body=%s where id=%s",(title, body, id))
+        cur.execute("Update articles set title=%s, body=%s where id=%s",(title, body, id))
 
         mysql.connection.commit()
 
@@ -214,6 +214,19 @@ def edit_article(id):
 
         return redirect(url_for('dashboard'))
     return render_template('edit_article.html', form = form)
+
+
+@app.route('/delete_article/<string:id>',methods=['POST'])
+@is_logged_in
+def delete_article(id):
+    cur = mysql.connection.cursor()
+    cur.execute("Delete from articles where id=%s",[id])
+
+    mysql.connection.commit()
+    cur.close()
+    flash('Article Deleted', 'success')
+
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.secret_key='secretkey'
