@@ -52,13 +52,14 @@ def articles():
         
     cur.close()
 
-@app.route('/articles/<string:id>/')
+@app.route('/article/<string:id>/')
 def article(id):
     cur = mysql.connection.cursor()
 
-    result = cur.execute("select * from articles where id = %s",[id])
-    
+    result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
+
     article = cur.fetchone()
+
     return render_template('article.html', article=article)
 
 class RegisterForm(Form):
