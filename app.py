@@ -3,6 +3,11 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators
 from passlib.hash import sha256_crypt
 from functools import wraps
+from ocr import ocr_core
+
+UPLOAD_FOLDER = '/static/uploads/'
+
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
 app = Flask(__name__)
 
@@ -13,6 +18,10 @@ app.config['MYSQL_DB'] = 'storyboard'
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
+
+def allowed_file(filename):  
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 
@@ -35,6 +44,7 @@ def about():
     return render_template('about.html')
 
 @app.route('/articles')
+@is_logged_in
 def articles():
     cur = mysql.connection.cursor()
 
@@ -53,6 +63,7 @@ def articles():
     cur.close()
 
 @app.route('/article/<string:id>/')
+@is_logged_in
 def article(id):
     cur = mysql.connection.cursor()
 
@@ -228,6 +239,65 @@ def delete_article(id):
     flash('Article Deleted', 'success')
 
     return redirect(url_for('dashboard'))
+
+@app.route('/upload', methods=['GET', 'POST'])
+@is_logged_in
+def upload_page():  
+    
+    form = ArticleForm(request.form)
+    if request.method == 'POST' and not form.validate():
+        if 'file' not in request.files:
+            return render_template('upload.html', msgforupload='No file selected')
+        file = request.files['file']
+        if file.filename == '':
+            return render_template('upload.html', msgforupload='No file selected')
+
+        if file and allowed_file(file.filename):
+            extracted_text = ocr_core(file)
+            form.body.data = extracted_text
+            return render_template('upload.html', form=form, text=extracted_text)
+
+    # elif request.method == 'GET':
+    #     return render_template('upload.html')
+
+    if request.method == 'POST' and form.validate():
+        title = form.title.data
+        
+        body = form.body.data
+        cur = mysql.connection.cursor()
+
+        cur.execute("INSERT INTO ARTICLES(title,body, author) values ( %s,%s,%s)",(title, body, session['username']))
+
+        mysql.connection.commit()
+
+        cur.close()
+
+        flash('Article created', 'success')
+
+        return redirect(url_for('dashboard'))
+    return render_template('upload.html', form = form)
+
+
+
+# @app.route('/addwithOCR', methods = ['GET','POST'])
+# @is_logged_in
+# def addwithOCR():
+#     form = ArticleForm(request.form)
+#     if request.method == 'POST' and form.validate():
+#         title = form.title.data
+#         body = form.body.data
+#         cur = mysql.connection.cursor()
+
+#         cur.execute("INSERT INTO ARTICLES(title,body, author) values ( %s,%s,%s)",(title, body, session['username']))
+
+#         mysql.connection.commit()
+
+#         cur.close()
+
+#         flash('Article created', 'success')
+
+#         return redirect(url_for('dashboard'))
+#     return render_template('addwithOCR.html', form = form)
 
 if __name__ == '__main__':
     app.secret_key='secretkey'
