@@ -48,7 +48,7 @@ def about():
 def articles():
     cur = mysql.connection.cursor()
 
-    result = cur.execute("select * from articles")
+    result = cur.execute("select * from articles where status='public'")
     
     articles = cur.fetchall()
 
@@ -155,8 +155,8 @@ def logout():
 def dashboard():
 
     cur = mysql.connection.cursor()
-
-    result = cur.execute("select * from articles")
+    
+    result = cur.execute("select * from articles where author = %s",(session['username'],))
     
     articles = cur.fetchall()
 
