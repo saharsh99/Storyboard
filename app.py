@@ -1,11 +1,11 @@
 from flask import Flask, render_template, flash, redirect, url_for, session, request,logging
 from flask_mysqldb import MySQL
-from wtforms import Form, StringField, TextAreaField, PasswordField, validators
+from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
+import re
 from functools import wraps
 from ocr import ocr_core
 
-UPLOAD_FOLDER = '/static/uploads/'
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
 
@@ -48,8 +48,8 @@ def about():
 def articles():
     cur = mysql.connection.cursor()
 
-    result = cur.execute("select * from articles where status='public'")
-    
+    result = cur.execute("select * from articles where status='public' order by create_date desc")
+
     articles = cur.fetchall()
 
     if result>0:
@@ -70,8 +70,12 @@ def article(id):
     result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
 
     article = cur.fetchone()
-
-    return render_template('article.html', article=article)
+    print(article)
+    if article['status'] == 'public':
+        return render_template('article.html', article=article)
+    else:
+        flash('Cannot access article','danger')
+        return render_template('home.html')
 
 class RegisterForm(Form):
     name = StringField('Name', [validators.Length(min=1, max=50)])
@@ -173,6 +177,7 @@ def dashboard():
 class ArticleForm(Form):
     title = StringField('Title', [validators.Length(min=1, max=200)])
     body = TextAreaField('Body', [validators.Length(min=30)])
+    status = SelectField('Status',choices=[('public','Public'),('private','Private')])
 
 @app.route('/add_article', methods = ['GET','POST'])
 @is_logged_in
@@ -181,10 +186,12 @@ def add_article():
     if request.method == 'POST' and form.validate():
         title = form.title.data
         body = form.body.data
-
+        status = form.status.data
         cur = mysql.connection.cursor()
+        #for removing <p> from database
+        subbody = re.compile(r'<[^>]+>').sub('', body)
 
-        cur.execute("INSERT INTO ARTICLES(title,body, author) values ( %s,%s,%s)",(title, body, session['username']))
+        cur.execute("INSERT INTO ARTICLES(title,body, author,status) values ( %s,%s,%s,%s)",(title, subbody, session['username'],status))
 
         mysql.connection.commit()
 
@@ -203,42 +210,50 @@ def edit_article(id):
     result = cur.execute("Select * from articles where id = %s",[id])
 
     article = cur.fetchone()
+    
+    if article['author'] == session['username']:
 
+        form = ArticleForm(request.form)
 
-    form = ArticleForm(request.form)
+        form.title.data = article['title']
+        form.body.data = article['body']
+        form.status.data = article['status']
 
-    form.title.data = article['title']
-    form.body.data = article['body']
+        if request.method == 'POST' and form.validate():
+            title = request.form['title']
+            body = request.form['body']
+            status = request.form['status']
+            cur = mysql.connection.cursor()
+            subbody = re.compile(r'<[^>]+>').sub('', body)
+            cur.execute("Update articles set title=%s, body=%s, status=%s where id=%s",(title, subbody, status, id))
 
-    if request.method == 'POST' and form.validate():
-        title = request.form['title']
-        body = request.form['body']
+            mysql.connection.commit()
 
-        cur = mysql.connection.cursor()
+            cur.close()
 
-        cur.execute("Update articles set title=%s, body=%s where id=%s",(title, body, id))
+            flash('Article Updated', 'success')
 
-        mysql.connection.commit()
-
-        cur.close()
-
-        flash('Article Updated', 'success')
-
-        return redirect(url_for('dashboard'))
-    return render_template('edit_article.html', form = form)
+            return redirect(url_for('dashboard'))
+        return render_template('edit_article.html', form = form)
+    else:
+        flash('Cannot edit article','danger')
+        return render_template('home.html')
 
 
 @app.route('/delete_article/<string:id>',methods=['POST'])
 @is_logged_in
 def delete_article(id):
     cur = mysql.connection.cursor()
-    cur.execute("Delete from articles where id=%s",[id])
+    rows_affected = cur.execute("Delete from articles where id=%s and author=%s",(id,session['username']))
 
     mysql.connection.commit()
     cur.close()
-    flash('Article Deleted', 'success')
-
-    return redirect(url_for('dashboard'))
+    if rows_affected == 0:
+        flash('Cannot Delete this article','danger')
+        redirect(url_for('home'))
+    else:
+        flash('Article Deleted', 'success')
+        return redirect(url_for('dashboard'))
 
 @app.route('/upload', methods=['GET', 'POST'])
 @is_logged_in
@@ -264,9 +279,11 @@ def upload_page():
         title = form.title.data
         
         body = form.body.data
+        status = form.status.data
+        subbody = re.compile(r'<[^>]+>').sub('', body)
         cur = mysql.connection.cursor()
 
-        cur.execute("INSERT INTO ARTICLES(title,body, author) values ( %s,%s,%s)",(title, body, session['username']))
+        cur.execute("INSERT INTO ARTICLES(title,body, author, status) values ( %s,%s,%s, %s)",(title, subbody, session['username']),status)
 
         mysql.connection.commit()
 
@@ -277,27 +294,6 @@ def upload_page():
         return redirect(url_for('dashboard'))
     return render_template('upload.html', form = form)
 
-
-
-# @app.route('/addwithOCR', methods = ['GET','POST'])
-# @is_logged_in
-# def addwithOCR():
-#     form = ArticleForm(request.form)
-#     if request.method == 'POST' and form.validate():
-#         title = form.title.data
-#         body = form.body.data
-#         cur = mysql.connection.cursor()
-
-#         cur.execute("INSERT INTO ARTICLES(title,body, author) values ( %s,%s,%s)",(title, body, session['username']))
-
-#         mysql.connection.commit()
-
-#         cur.close()
-
-#         flash('Article created', 'success')
-
-#         return redirect(url_for('dashboard'))
-#     return render_template('addwithOCR.html', form = form)
 
 if __name__ == '__main__':
     app.secret_key='secretkey'
