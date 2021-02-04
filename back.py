@@ -24,21 +24,21 @@ cookie = {
 }
 
 
-def word(msg):
-    _ = requests.get(url)
-    res = requests.get(word_url.format(msg), cookies=cookie)
-    data = res.json()
-    main_data = data['data'][0]
-    fillers = main_data["fillers"]
-    suggestions = main_data['alts']
-    # print("*" * 50)
-    # print(fillers)
-    # print(suggestions)
-    # print("*" * 50)
-    return {
-        "fillers": fillers,
-        "suggestions": suggestions
-    }
+# def word(msg):
+#     _ = requests.get(url)
+#     res = requests.get(word_url.format(msg), cookies=cookie)
+#     data = res.json()
+#     main_data = data['data'][0]
+#     fillers = main_data["fillers"]
+#     suggestions = main_data['alts']
+#     # print("*" * 50)
+#     # print(fillers)
+#     # print(suggestions)
+#     # print("*" * 50)
+#     return {
+#         "fillers": fillers,
+#         "suggestions": suggestions
+#     }
 
 
 def paraphrase(message):
@@ -79,8 +79,13 @@ def summarize(text):
 # The concept of an "essay" has been extended to other media beyond writing. A film essay is a movie that often incorporates documentary filmmaking styles and focuses more on the evolution of a theme or idea. A photographic essay covers a topic with a linked series of photographs that may have accompanying text or captions.
 # '''
 
-# # print(word(msg))
-# # print(paraphrase(message))
+# newText = '''Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.'''
+
+# # # # print(word(msg))
+
+# nstr = paraphrase(newText)
+
+# print(nstr['suggestions'][0])
 
 # #min length of text should be of 50 character
 # print(summarize(text))

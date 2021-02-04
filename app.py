@@ -3,9 +3,10 @@ from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
 import re
+import html
 from functools import wraps
 from ocr import ocr_core
-from back import summarize
+from back import summarize, paraphrase
 
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
@@ -72,16 +73,23 @@ def article(id):
 
     article = cur.fetchone()
     if result>0:
-    
-
         if article['status'] == 'public':
             try:
+                clean_body = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',article['body'])
+                suggested = paraphrase(clean_body)
+                paraphrasedp = suggested['suggestions'][0]
+                paraphrased = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',paraphrasedp)
+            except:
+                print('Problem while paraphrasing')
+                paraphrased = 'Paraphrase not available'
+            try:
                 summary = summarize(article['body'])
-                return render_template('article.html', article=article,summary=summary)
+                summary = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',summary)
             except:
                 print('Exception occured while generating summary')
                 summary = "Currently not available"
-                return render_template('article.html',article=article, summary=summary)
+            
+            return render_template('article.html', article=article,summary=summary,paraphrase=paraphrased)
         else:
             flash('Cannot access article','danger')
             return render_template('home.html')

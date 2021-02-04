@@ -9,19 +9,29 @@
     <small>Written by {{article.author}} on {{article.create_date}}</small>
     <hr>
     <div>
-      {{article.body | safe}}
+      <p style=" text-align:justify;text-justify:inter-word; word-wrap: break-word;">{{article.body | safe}}</p>
     </div>
   </div>
 
   <div class="col-sm-4">
-      <div class="card">
+      <div class="card" style="display: flexbox;">
 
         <h3 class="card-title ">Summary</h3>
         <div class="card-body">
-            <p>{{summary}}</p> 
+            <p style=" text-align:justify;text-justify:inter-word; word-wrap: break-word;">{{summary}}</p> 
         </div>
   
       </div>
+
+      <div class="card" style="display: flexbox;">
+
+        <h3 class="card-title ">Paraphrase</h3>
+        <div class="card-body">
+            <p style=" text-align:justify;text-justify:inter-word; word-wrap: break-word;">{{paraphrase}}</p> 
+        </div>
+  
+      </div>
+      
     </div>
 </div>
 
