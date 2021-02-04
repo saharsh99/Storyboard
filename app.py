@@ -5,6 +5,7 @@ from passlib.hash import sha256_crypt
 import re
 from functools import wraps
 from ocr import ocr_core
+from back import summarize
 
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
@@ -70,12 +71,22 @@ def article(id):
     result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
 
     article = cur.fetchone()
-    print(article)
-    if article['status'] == 'public':
-        return render_template('article.html', article=article)
+    if result>0:
+    
+
+        if article['status'] == 'public':
+            try:
+                summary = summarize(article['body'])
+                return render_template('article.html', article=article,summary=summary)
+            except:
+                print('Exception occured while generating summary')
+                summary = "Currently not available"
+                return render_template('article.html',article=article, summary=summary)
+        else:
+            flash('Cannot access article','danger')
+            return render_template('home.html')
     else:
-        flash('Cannot access article','danger')
-        return render_template('home.html')
+        return render_template('articles.html')
 
 class RegisterForm(Form):
     name = StringField('Name', [validators.Length(min=1, max=50)])
@@ -109,6 +120,7 @@ def register():
 
         return redirect(url_for('login'))
     return render_template('register.html', form=form)
+
 
 @app.route('/login',methods=['GET','POST'])
 def login():
@@ -208,8 +220,8 @@ def edit_article(id):
     cur = mysql.connection.cursor()
 
     result = cur.execute("Select * from articles where id = %s",[id])
-
-    article = cur.fetchone()
+    if result > 0:
+        article = cur.fetchone()
     
     if article['author'] == session['username']:
 
@@ -283,7 +295,7 @@ def upload_page():
         subbody = re.compile(r'<[^>]+>').sub('', body)
         cur = mysql.connection.cursor()
 
-        cur.execute("INSERT INTO ARTICLES(title,body, author, status) values ( %s,%s,%s, %s)",(title, subbody, session['username']),status)
+        cur.execute("INSERT INTO ARTICLES(title,body, author, status) values ( %s,%s,%s, %s)",(title, subbody, session['username'],status))
 
         mysql.connection.commit()
 

@@ -2,10 +2,27 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-  <h1>{{article.title}}</h1>
-  <small>Written by {{article.author}} on {{article.create_date}}</small>
-  <hr>
-  <div>
-    {{article.body | safe}}
+
+<div class="row">
+  <div class="col-sm-8" style="background-color: beige;">
+    <h1>{{article.title}}</h1>
+    <small>Written by {{article.author}} on {{article.create_date}}</small>
+    <hr>
+    <div>
+      {{article.body | safe}}
+    </div>
   </div>
+
+  <div class="col-sm-4">
+      <div class="card">
+
+        <h3 class="card-title ">Summary</h3>
+        <div class="card-body">
+            <p>{{summary}}</p> 
+        </div>
+  
+      </div>
+    </div>
+</div>
+
 {% endblock %}
