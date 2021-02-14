@@ -5,18 +5,163 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Storyboard</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.ckeditor.com/4.16.0/standard-all/ckeditor.js"></script>
+</head> 
 </head>
 <body>
     {% include 'includes/_navbar.html'%}
     <div class="container">
         {% include 'includes/_messages.html' %}
         {% block body %}{% endblock %}
-
     </div>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-    <script src="//cdn.ckeditor.com/4.6.2/basic/ckeditor.js"></script>
-    <script type="text/javascript">
-      CKEDITOR.replace('editor')
+    <script>
+      var PLACEHOLDERS = [
+      {
+        id: 1,
+        title: 'Article id: 1'
+      },
+      {
+        id: 2,
+        title: 'Article id: 2'
+      },
+      {
+        id: 3 ,
+        title: 'Article id: 3'
+      },
+      {
+        id: 4,
+        title: 'Article id: 4'
+      },
+      {
+        id: 5,
+        title: 'Article id: 5'
+      },
+      {
+        id: 6,
+        title: 'Article id: 6'
+      },
+      {
+        id: 7,
+        title: 'Article id: 7'
+      },
+      {
+        id: 8,
+        title: 'Article id: 8'
+      },
+      {
+        id: 9,
+        title: 'Article id: 9'
+      }
+      ,
+      {
+        id: 10,
+        title: 'Article id: 10'
+      }
+      ,
+      {
+        id: 11,
+        title: 'Article id: 11'
+      }
+      ,
+      {
+        id: 12,
+        title: 'Article id: 12'
+      }
+      ,
+      {
+        id: 13,
+        title: 'Article id: 13'
+      }
+      ,
+      {
+        id: 14,
+        title: 'Article id: 14'
+      }
+      ,
+      {
+        id: 15,
+        title: 'Article id: 15'
+      }
+      ,
+      {
+        id: 16,
+        title: 'Article id: 16'
+      }
+      ,
+      {
+        id: 17,
+        title: 'Article id: 17'
+      }
+      ,
+      {
+        id: 18,
+        title: 'Article id: 18'
+      }
+      ,
+      {
+        id: 19,
+        title: 'Article id: 19'
+      }
+    ];
+      CKEDITOR.addCss('span > .cke_placeholder { background-color: #ffeec2; }');
+  
+      CKEDITOR.replace('editor', {
+        plugins: 'autocomplete,textmatch,toolbar,wysiwygarea,basicstyles,link,undo,list,indentlist',
+        on: {
+          instanceReady: function(evt) {
+            var itemTemplate = '<li data-id="{id}">' +
+              '<div><strong class="item-title">{title}</strong></div>' +
+              '</li>',
+              outputTemplate = '<a href="/article/{id}">[[{title}]]<span>&nbsp;</span></a>';
+  
+            var autocomplete = new CKEDITOR.plugins.autocomplete(evt.editor, {
+              textTestCallback: textTestCallback,
+              dataCallback: dataCallback,
+              itemTemplate: itemTemplate,
+              outputTemplate: outputTemplate
+            });
+  
+            // Override default getHtmlToInsert to enable rich content output.
+            autocomplete.getHtmlToInsert = function(item) {
+              return this.outputTemplate.output(item);
+            }
+          }
+        }
+      });
+  
+      function textTestCallback(range) {
+        if (!range.collapsed) {
+          return null;
+        }
+  
+        return CKEDITOR.plugins.textMatch.match(range, matchCallback);
+      }
+  
+      function matchCallback(text, offset) {
+        var pattern = /\[{2}([A-z]|\])*$/,
+          match = text.slice(0, offset)
+          .match(pattern);
+  
+        if (!match) {
+          return null;
+        }
+  
+        return {
+          start: match.index,
+          end: offset
+        };
+      }
+  
+      function dataCallback(matchInfo, callback) {
+        var data = PLACEHOLDERS.filter(function(item) {
+          var itemName = '[[' + item.name + ']]';
+          return itemName.indexOf(matchInfo.query.toLowerCase()) == 0;
+        });
+  
+        callback(data);
+      }
     </script>
 </body>
 </html>

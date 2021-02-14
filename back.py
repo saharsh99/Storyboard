@@ -1,7 +1,7 @@
 import requests
 
 url = "https://quillbot.com/"
-word_url = "https://rest.quillbot.com/api/paraphraser/segment3?text={}&inputLang=en"
+# word_url = "https://rest.quillbot.com/api/paraphraser/segment3?text={}&inputLang=en"
 para_url = "https://rest.quillbot.com/api/paraphraser/single-paraphrase/2?text={}&strength=2&autoflip=false&wikify=false&fthresh=-1&inputLang=en"
 sum_url = "https://www.tools4noobs.com/"
 

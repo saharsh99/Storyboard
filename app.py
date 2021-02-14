@@ -4,6 +4,7 @@ from wtforms import Form, StringField, TextAreaField, PasswordField, validators,
 from passlib.hash import sha256_crypt
 import re
 import html
+import json
 from functools import wraps
 from ocr import ocr_core
 from back import summarize, paraphrase
@@ -21,9 +22,26 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
 mysql = MySQL(app)
 
+
+# def autocomplete():
+#     cur = mysql.connection.cursor()
+
+#     result = cur.execute("select id,title from articles where status='public' order by create_date desc")
+
+#     articles = cur.fetchall()
+#     if result > 0:
+#         return render_template('add_article',jsonstr=articles)
+#     else:
+#         print(articles)
+#         return render_template('home.html')
+
+
+
 def allowed_file(filename):  
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 
 
 
@@ -73,9 +91,9 @@ def article(id):
 
     article = cur.fetchone()
     if result>0:
-        if article['status'] == 'public':
+        if article['status'] == 'public' or article['author']==session['username']:
+            clean_body = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',article['body'])
             try:
-                clean_body = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',article['body'])
                 suggested = paraphrase(clean_body)
                 paraphrasedp = suggested['suggestions'][0]
                 paraphrased = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});').sub('',paraphrasedp)
@@ -177,7 +195,6 @@ def logout():
 @app.route('/dashboard')
 @is_logged_in
 def dashboard():
-
     cur = mysql.connection.cursor()
     
     result = cur.execute("select * from articles where author = %s",(session['username'],))
@@ -209,9 +226,9 @@ def add_article():
         status = form.status.data
         cur = mysql.connection.cursor()
         #for removing <p> from database
-        subbody = re.compile(r'<[^>]+>').sub('', body)
+        #body = re.compile(r'<[^>]+>').sub('', body)
 
-        cur.execute("INSERT INTO ARTICLES(title,body, author,status) values ( %s,%s,%s,%s)",(title, subbody, session['username'],status))
+        cur.execute("INSERT INTO ARTICLES(title,body, author,status) values ( %s,%s,%s,%s)",(title, body, session['username'],status))
 
         mysql.connection.commit()
 
@@ -244,8 +261,8 @@ def edit_article(id):
             body = request.form['body']
             status = request.form['status']
             cur = mysql.connection.cursor()
-            subbody = re.compile(r'<[^>]+>').sub('', body)
-            cur.execute("Update articles set title=%s, body=%s, status=%s where id=%s",(title, subbody, status, id))
+            #subbody = re.compile(r'<[^>]+>').sub('', body)
+            cur.execute("Update articles set title=%s, body=%s, status=%s where id=%s",(title, body, status, id))
 
             mysql.connection.commit()
 
@@ -300,10 +317,10 @@ def upload_page():
         
         body = form.body.data
         status = form.status.data
-        subbody = re.compile(r'<[^>]+>').sub('', body)
+       # subbody = re.compile(r'<[^>]+>').sub('', body)
         cur = mysql.connection.cursor()
 
-        cur.execute("INSERT INTO ARTICLES(title,body, author, status) values ( %s,%s,%s, %s)",(title, subbody, session['username'],status))
+        cur.execute("INSERT INTO ARTICLES(title,body, author, status) values ( %s,%s,%s, %s)",(title, body, session['username'],status))
 
         mysql.connection.commit()
 
