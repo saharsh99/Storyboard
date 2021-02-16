@@ -2,6 +2,7 @@ from flask import Flask, render_template, flash, redirect, url_for, session, req
 from flask_mysqldb import MySQL
 from wtforms import Form, StringField, TextAreaField, PasswordField, validators, SelectField
 from passlib.hash import sha256_crypt
+import email_validator
 import re
 import html
 import json
@@ -117,8 +118,8 @@ def article(id):
 class RegisterForm(Form):
     name = StringField('Name', [validators.Length(min=1, max=50)])
     username = StringField('Username', [validators.Length(min=4, max=25)])
-    email = StringField('Email', [validators.Length(min=6, max=50)])
-    password = PasswordField('Password', [
+    email = StringField('Email', [validators.Length(min=6, max=50),validators.Email()])
+    password = PasswordField('Password', [validators.Length(min=8),
         validators.DataRequired(),
         validators.EqualTo('confirm', message='Passwords do not match')
     ])
