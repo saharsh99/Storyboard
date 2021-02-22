@@ -87,6 +87,11 @@ def articles():
 @is_logged_in
 def article(id):
     cur = mysql.connection.cursor()
+    
+    
+    if not id.isnumeric():
+        flash("SQLi not allowed ", 'danger')
+        return render_template("articles.html")
 
     result = cur.execute("SELECT * FROM articles WHERE id = %s", [id])
 
@@ -154,6 +159,10 @@ def login():
     if request.method == "POST":
         username = request.form['username']
         password_candidate = request.form['password']
+        error = 'Invalid login'
+
+        if not username.isalnum():
+            return render_template('login.html', error=error)
 
         cur = mysql.connection.cursor()
 
@@ -170,7 +179,7 @@ def login():
                 flash('You are now logged in','success')
                 return redirect(url_for('dashboard'))
             else:
-                error = 'Invalid login'
+                
                 return render_template('login.html', error=error)
 
             cur.close()
